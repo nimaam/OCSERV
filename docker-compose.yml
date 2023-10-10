@@ -1,0 +1,42 @@
+version: '3.8'
+
+networks:
+  portainer_sefroyek-dockers-mgmt:
+    external: true
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.98.0/24
+
+services:
+  ocserv:
+    build:
+      context: ./source
+      dockerfile: Dockerfile
+    hostname: ocacs.armancoders.com
+    image: ocserv
+    container_name: ocserv
+    environment:
+       - VPN_DOMAIN=ocacs.armancoders.com
+       - VPN_NETWORK=10.20.30.0
+       - VPN_NETMASK=255.255.255.0
+       - LAN_NETWORK=192.168.0.0
+       - LAN_NETMASK=255.255.0.0
+       - VPN_USERNAME=nima
+       - VPN_PASSWORD=missani
+       -  TERM=xterm
+    cap_add:
+       - NET_ADMIN    
+    restart: always
+    privileged: true
+    ports:
+      - 8443:443/udp
+      - 8443:443
+    volumes:
+      - "/opt/dockers/nginx-proxy-manager/letsencrypt/live/npm-20/fullchain.pem:/etc/ocserv/server-cert.pem"
+      - "/opt/dockers/nginx-proxy-manager/letsencrypt/live/npm-20/privkey.pem:/etc/ocserv/server-key.pem"
+      - "/opt/dockers/nginx-proxy-manager/letsencrypt/live/npm-20/privkey.pem:/etc/ocserv/ca.pem"
+    networks:
+      portainer_sefroyek-dockers-mgmt:
+        ipv4_address: 172.16.98.32
