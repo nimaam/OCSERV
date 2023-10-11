@@ -15,39 +15,24 @@ RUN ./configure
 RUN make 
 RUN  make install
 RUN mkdir -p /etc/ocserv 
-RUN  cp /usr/src/ocserv/doc/sample.config /etc/ocserv/ocserv.conf 
+RUN rm -rf /ocserv.conf
 WORKDIR /etc/ocserv
 RUN rm -rf /usr/src/ocserv 
 RUN runDeps="$(scanelf --needed --nobanner /usr/local/sbin/ocserv | awk '{ gsub(/,/, "\nso:", $2); print "so:" $2 }' | xargs -r apk info --installed | sort -u)" 
 #
-RUN apk add --virtual .run-deps $runDeps gnutls-utils iptables net-tools
-RUN apk del .build-deps 
+RUN apk add --virtual .run-deps $runDeps gnutls-utils iptables net-tools linux-pam libev libseccomp lz4-libs certbot
+RUN apk del curl git wget g++ gnutls-dev gpgme libev-dev libnl3-dev libseccomp-dev linux-headers linux-pam-dev lz4-dev make readline-dev tar xz
 RUN rm -rf /var/cache/apk/*
 
 RUN set -xe 
-RUN  mkdir -p /etc/ocserv/certs 
 RUN mkdir -p /etc/ocserv/config-per-user 
 RUN  mkdir -p /etc/ocserv/config-per-group 
 RUN mkdir -p /etc/ocserv/defaults 
 RUN touch /etc/ocserv/defaults/user.conf 
 RUN touch /etc/ocserv/defaults/group.conf 
-RUN touch /etc/ocserv/ocpasswd 
-RUN sed -i -e 's@\./sample.passwd@/etc/ocserv/ocpasswd@' \
-              -e 's@\.\./tests/@/etc/ocserv/@' \
-              -e 's@^#cert-group-oid =@cert-group-oid =@' \
-              -e 's@^#compression =.*@compression = true@' \
-              -e 's@^#config-per-@config-per-@' \
-              -e 's@^#default-@default-@' \
-              -e 's@^#enable-auth = "certificate"$@enable-auth = "certificate"@' \
-              -e 's@^default-domain@#&@' \
-              -e 's@^dns =.*@dns = 8.8.8.8@' \
-              -e 's@^max-clients =.*@max-clients = 0@' \
-              -e 's@^max-same-clients =.*@max-same-clients = 0@' \
-              -e 's@^route@#&@' \
-              -e 's@^try-mtu-discovery =.*@try-mtu-discovery = true@' \
-              /etc/ocserv/ocserv.conf
-
+COPY conf/ocserv.conf /etc/ocserv.conf
 COPY init.sh /init.sh
+RUN chmod +x /init.sh
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 VOLUME /etc/ocserv

@@ -9,6 +9,17 @@ networks:
       config:
         - subnet: 172.16.98.0/24
 
+  
+  Management-network:
+    external: true
+    driver: macvlan
+    driver_opts:
+      parent: "ens34"
+    ipam:
+      config:
+        - subnet: 172.16.105.0/24
+          gateway: 172.16.105.1
+
 services:
   ocserv:
     build:
@@ -19,9 +30,9 @@ services:
     container_name: ocserv
     environment:
        - VPN_DOMAIN=ocacs.armancoders.com
-       - VPN_NETWORK=10.20.30.0
+       - VPN_NETWORK=10.98.212.0
        - VPN_NETMASK=255.255.255.0
-       - LAN_NETWORK=192.168.0.0
+       - LAN_NETWORK=172.16.0.0/16
        - LAN_NETMASK=255.255.0.0
        - VPN_USERNAME=nima
        - VPN_PASSWORD=missani
@@ -30,13 +41,15 @@ services:
        - NET_ADMIN    
     restart: always
     privileged: true
-    ports:
-      - 8443:443/udp
-      - 8443:443
+      #    ports:
+      #- 443:443/udp
+      #- 443:443
     volumes:
-      - "/opt/dockers/nginx-proxy-manager/letsencrypt/live/npm-20/fullchain.pem:/etc/ocserv/server-cert.pem"
-      - "/opt/dockers/nginx-proxy-manager/letsencrypt/live/npm-20/privkey.pem:/etc/ocserv/server-key.pem"
-      - "/opt/dockers/nginx-proxy-manager/letsencrypt/live/npm-20/privkey.pem:/etc/ocserv/ca.pem"
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./source/conf:/etc/ocserv/
+        #      - "/opt/dockers/nginx-proxy-manager/letsencrypt/live/npm-20/fullchain.pem:/etc/ocserv/server-cert.pem"
+        #      - "/opt/dockers/nginx-proxy-manager/letsencrypt/live/npm-20/privkey.pem:/etc/ocserv/server-key.pem"
+        #      - "/opt/dockers/nginx-proxy-manager/letsencrypt/live/npm-20/privkey.pem:/etc/ocserv/ca.pem"
     networks:
-      portainer_sefroyek-dockers-mgmt:
-        ipv4_address: 172.16.98.32
+        Management-network:
+          ipv4_address: 172.16.105.7
